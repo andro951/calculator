@@ -125,45 +125,64 @@ class _CalculatorState extends State<Calculator> {
       appBar: AppBar(
         title: const Text('Calculator'),
       ),
-      body: Column(
-        children: <Widget>[
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16.0),
-              alignment: Alignment.bottomRight,
-              child: Text(
-                '$_expression$_result',
-                style: const TextStyle(fontSize: 32.0),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: GridView.count(
-              crossAxisCount: 4,
-              children: <String>[
-                'C', '(', ')', '/',
-                '7', '8', '9', '*',
-                '4', '5', '6', '-',
-                '1', '2', '3', '+',
-                'n', '0', '.', '=',
-              ].map((value) {
-                return GridTile(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: buttonColor(value),
-                    ),
-                    onPressed: () => _onPressed(value),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Set a max width for the buttons (e.g., 600px)
+          double maxButtonWidth = constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+          
+          return Column(
+            children: <Widget>[
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  alignment: Alignment.bottomRight,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
                     child: Text(
-                      value,
-                      style: const TextStyle(fontSize: 24.0),
+                      '$_expression$_result',
+                      style: const TextStyle(fontSize: 32.0),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
+                ),
+              ),
+              Expanded(
+                flex: 4, // Giving more room for buttons
+                child: Center( // Center the grid for wide screens
+                  child: Container(
+                    width: maxButtonWidth, // Constrain button width
+                    child: GridView.count(
+                      crossAxisCount: 4,
+                      childAspectRatio: 1.2, // Adjust button height-to-width ratio
+                      padding: const EdgeInsets.all(8.0),
+                      mainAxisSpacing: 8.0,
+                      crossAxisSpacing: 8.0,
+                      children: <String>[
+                        'C', '(', ')', '/',
+                        '7', '8', '9', '*',
+                        '4', '5', '6', '-',
+                        '1', '2', '3', '+',
+                        'n', '0', '.', '=',
+                      ].map((value) {
+                        return GridTile(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: buttonColor(value),
+                            ),
+                            onPressed: () => _onPressed(value),
+                            child: Text(
+                              value,
+                              style: const TextStyle(fontSize: 24.0),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
