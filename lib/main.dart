@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:expressions/expressions.dart';
 
@@ -32,34 +34,91 @@ class _CalculatorState extends State<Calculator> {
   String _result = '';
   bool _evaluated = false;
 
+  bool isOperator(String value) {
+    return RegExp(r'[/*+-]').hasMatch(value);
+  }
+
+  bool isNumeric(String value) {
+    return RegExp(r'[0-9.]').hasMatch(value);
+  }
+
   void _onPressed(String value) {
     setState(() {
-      if (value == 'C') {
-        _expression = '';
-        _result = '';
-      } else if (value == '=') {
-        _evaluated = true;
-        try {
-          final expression = Expression.parse(_expression);
-          const evaluator = ExpressionEvaluator();
-          final result = evaluator.eval(expression, {});
-          _result = ' = $result';
-        } catch (e) {
-          _result = ' Error';
-        }
-      } else {
-        if (_evaluated) {
-          if (RegExp(r'[0-9.]').hasMatch(value)) {
-            _expression = '';
-          }
-
+      switch (value) {
+        case 'C':
+          _expression = '';
           _result = '';
           _evaluated = false;
-        }
+          break;
+        case '=':
+          _evaluated = true;
+          try {
+            final expression = Expression.parse(_expression);
+            const evaluator = ExpressionEvaluator();
+            final result = evaluator.eval(expression, {});
+            _result = ' = $result';
+          } catch (e) {
+            _result = ' Error';
+          }
+          break;
+        case 'n':
+          if (_expression.isEmpty) {
+            _expression += '-';
+            break;
+          }
 
-        _expression += value;
+          final String lastChar = _expression[_expression.length - 1];
+          if (lastChar == '-' || isNumeric(lastChar)) {
+            int i = _expression.length - 1;
+            while (i >= 0 && isNumeric(_expression[i])) {
+              i--;
+            }
+            if (i < 0) {
+              _expression = '-$_expression';
+            }
+            else if (i >= 0 && _expression[i] == '-' && (i == 0 || !isNumeric(_expression[i - 1]))) {
+              _expression = _expression.substring(0, i) + _expression.substring(i + 1);
+            } else {
+              _expression = '${_expression.substring(0, i + 1)}-${_expression.substring(i + 1)}';
+            }
+          }
+          else {
+            _expression += '-';
+          }
+
+          break;
+         default:
+            if (_evaluated) {
+              if (isNumeric(value)) {
+                _expression = '';
+              }
+              
+              _result = '';
+              _evaluated = false;
+            }
+
+            _expression += value;
+          break;
       }
     });
+  }
+
+  Color? buttonColor(String value) {
+    const int colorStrength = 100;
+    switch (value) {
+      case 'C':
+        return Colors.red[colorStrength];
+      case '=':
+        return Colors.green[colorStrength];
+      case 'n':
+        return Colors.purple[colorStrength];
+    }
+
+    if (isNumeric(value)) {
+      return Colors.grey[colorStrength];
+    }
+
+    return Colors.blue[colorStrength];
   }
 
   @override
@@ -85,13 +144,17 @@ class _CalculatorState extends State<Calculator> {
             child: GridView.count(
               crossAxisCount: 4,
               children: <String>[
-                '7', '8', '9', '/',
-                '4', '5', '6', '*',
-                '1', '2', '3', '-',
-                'C', '0', '=', '+',
+                'C', '(', ')', '/',
+                '7', '8', '9', '*',
+                '4', '5', '6', '-',
+                '1', '2', '3', '+',
+                'n', '0', '.', '=',
               ].map((value) {
                 return GridTile(
                   child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: buttonColor(value),
+                    ),
                     onPressed: () => _onPressed(value),
                     child: Text(
                       value,
